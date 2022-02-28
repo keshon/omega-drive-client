@@ -1,0 +1,6 @@
+.idea
+.DS_Store
+*.iml
+doc/_build
+*.js
+*.js.map

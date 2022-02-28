@@ -1,0 +1,238 @@
+{
+  "name": "Samuno User Access via Airtable",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        240,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "basicAuth",
+        "httpMethod": "POST",
+        "path": "some-endpoint",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        -60
+      ],
+      "webhookId": "some-endpoint",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "9",
+          "name": "Creds"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "list",
+        "application": "app ID (refer to Airtable docs)",
+        "table": "table ID (refer to Airtable docs)",
+        "additionalOptions": {
+          "fields": [],
+          "filterByFormula": "=AccessKey = '{{$json[\"body\"][\"AccessKey\"]}}'"
+        }
+      },
+      "name": "Users",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 1,
+      "position": [
+        870,
+        340
+      ],
+      "credentials": {
+        "airtableApi": {
+          "id": "10",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "list",
+        "application": "app ID (refer to Airtable docs)",
+        "table": "table ID (refer to Airtable docs)",
+        "additionalOptions": {}
+      },
+      "name": "PathsSettings",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        340
+      ],
+      "credentials": {
+        "airtableApi": {
+          "id": "10",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Code here will run once per input item.\n// More info and help: https://docs.n8n.io/nodes/n8n-nodes-base.functionItem\n\n\nitem.Fullname= item.fields.Fullname;\nitem.AccessKey = item.fields.AccessKey;\n\nreturn item;"
+      },
+      "name": "UserAccess",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [
+        1070,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Code here will run only once, no matter how many input items there are.\n// More info and help: https://docs.n8n.io/nodes/n8n-nodes-base.function\nlet user = $items(\"UserAccess\");\nlet pathsSettings = $items(\"PathsSettings\");\nconsole.log(user);\nconsole.log(pathsSettings);\n// Loop over inputs and add a new field called 'myNewField' to the JSON of each one\nuser[0].json.AvailablePaths = [];\n\nfor (path of pathsSettings) {\n  for (availPathID of user[0].json.fields.PathsAvailable) {\n    if (path.json.id == availPathID) {\n      let AvailPath = {};\n      AvailPath[\"Name\"] = path.json.fields.Name;\n      AvailPath[\"Letter\"] = path.json.fields.Letter;\n      AvailPath[\"RW\"] = path.json.fields.RW;\n      if (AvailPath) {\n        user[0].json.AvailablePaths.push(AvailPath);\n      }\n    }\n  }\n}\n\n\n// You can write logs to the browser console\nconsole.log('Done!');\n\nreturn user;"
+      },
+      "name": "Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "return item;\n"
+      },
+      "name": "ComposePayload",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [
+        550,
+        -70
+      ],
+      "notesInFlow": true,
+      "notes": "Create Discord embed object and stylize it's appearance"
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {
+          "reset": false
+        }
+      },
+      "name": "SplitInBatches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 1,
+      "position": [
+        510,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        670,
+        340
+      ],
+      "webhookId": "6636af92-69af-437c-821e-ea6fa88a29bb"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "ComposePayload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Users": {
+      "main": [
+        [
+          {
+            "node": "UserAccess",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PathsSettings": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UserAccess": {
+      "main": [
+        [
+          {
+            "node": "PathsSettings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ComposePayload": {
+      "main": [
+        [
+          {
+            "node": "SplitInBatches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SplitInBatches": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "ComposePayload",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "id": 9
+}
