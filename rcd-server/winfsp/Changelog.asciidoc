@@ -1,0 +1,775 @@
+= Changelog
+
+
+v1.10B4 (2022 Beta4)::
++
+--
+Changes since v1.10B3:
+
+* The Delete functionality introduced in release 2021.1 Beta3 (v1.10B3) has been reverted. For more information see this thread: https://groups.google.com/g/winfsp/c/1VYgTp1JpSI
+
+Changes since v1.9:
+
+* [NEW] Official Windows 11 support.
+
+* [NEW] Support for `FileDispositionInformationEx` and `FileRenameInformationEx` has been added.
+
+* [NEW] WinFsp now supports rebranding of the build products. This is primarily useful to commercial licensees. See https://github.com/billziss-gh/winfsp/wiki/WinFsp-Rebranding for more information.
+
+* [NEW] WinFsp-FUSE has a new capability `FSP_FUSE_CAP_DELETE_ACCESS`. If this capability is specified WinFsp will call the FUSE `access` method with the WinFsp-specific flag `FSP_FUSE_DELETE_OK` to check whether the deletion should be allowed. This can be used to disallow deletion of files and directories that would normally be allowed under the FUSE/POSIX model.
+
+* [NEW] WinFsp-FUSE has a new method for determining file access in the case where the user's primary SID (Windows Security Identifier) and group SID are the same (for example, this can happen when someone uses a Microsoft account as their primary login).
+** Previously when the user SID and group SID were the same WinFsp-FUSE looked at the UNIX permissions for the owner and the UNIX permissions for the group and used the MOST restrictive permissions, which often resulted in inadvertent "access denied" errors. (For example, if the owner permission was `rw-` and the group permission was `---` the result was `---` and therefore access denied).
+** Going forward this behavior will change. The user and group mode permissions will not be considered together even in the case where the user SID and group SID are the same. This will resolve the access denied errors.
+** However to preserve backward compatibility (there might be some file systems that rely on the old behavior) we will do so in stages. For release v1.10 (2021.1) there is a new registry setting under `HKLM\SOFTWARE\WinFsp` (or `HKLM\SOFTWARE\WOW6432Node\WinFsp` on a 64-bit system) called `DistinctPermsForSameOwnerGroup`, which if set to 1 will direct WinFsp-FUSE to use the new behavior. The default value is 0 which directs WinFsp-FUSE to use the old behavior. This default will change in a future release.
+
+* [NEW] A new registry setting under `HKLM\SOFTWARE\WinFsp` (or `HKLM\SOFTWARE\WOW6432Node\WinFsp` on a 64-bit system) called `MountDoNotUseLauncher` has been introduced, which if set to 1 will disable the use of the Launcher during mounting. The default value is 0 which allows the use of the Launcher during mounting in those rare cases when necessary. (In general the Launcher is not necessary for mounting. However when running a file system in the Windows Service context (session 0) under an account that is not LocalSystem (e.g. `NT AUTHORITY\NETWORK SERVICE`), the Launcher is used to create global drives.)
+
+* [NEW] A new sample memfs-fuse file system written in C++ has been added. This file system uses all FUSE2 features offered by WinFsp-FUSE, passes all file system tests (that can be passed by a FUSE2 file system) and will act as the reference WinFsp-FUSE file system going forward.
+
+* [FIX] File share access when overwriting a file (e.g. when using `TRUNCATE_EXISTING`) is now done in a manner compatible with NTFS (previously there were cases when overwriting a file where behavior diverged from the NTFS one). (See GitHub issue #364.)
+
+* [FIX] The FSD will now report a file's reparse tag in the `EaSize` field of `FILE_FULL_DIR_INFORMATION` and friends. This fixes problems such as `cmd.exe` not recognizing symlinks in a `dir` command. (See GitHub issue #380.)
+
+* [FIX] Fixed a problem in the file system shutdown protocol which resolves an occasional access violation in the user mode file system process. Previously it was possible for a file system to crash when stopping itself using `FspFileSystemStopDispatcher`; this problem has been rectified. (See GitHub issue #369.)
+
+* [FIX] Improved symlink support for FUSE file systems. Notably:
+
+** FUSE file systems now support converting a directory to a symlink reparse point.
+
+** The determination of whether a symlink is a file or directory (necessary because the Windows file system makes this distinction) is now possible for file systems that do not support slashdot (`/.`) queries. (A slashdot query is one like `getattr("/PATH/.")`; such queries are not normally expected to be resolved by FUSE file systems.)
+
+* [FIX] Fixed a problem in the FUSE layer where in some rare circumstances the `release` operation could be called with an uninitialized `path` argument. (See GitHub issue billziss-gh/cgofuse#58 and commit f51bdef53427d1bba688fb6c768792fdc22ffc7b).
+
+* [FIX] Fixed a potential problem when launching file system instances using the Launcher. (See GitHub issue #356.)
+
+* [FIX] The `winfsp.h` header no longer defines `FILE_FULL_EA_INFORMATION` when compiled under mingw. This is because the mingw tool chain already includes a definition of this type. (GitHub PR #371. Thanks @lemourin.)
+--
+
+v1.10B3 (2021.1 Beta3)::
+
+Changes since v1.9:
+
+* [NEW] Official Windows 11 support.
+
+* [NEW] WinFsp has had its Delete functionality redesigned in release 2021.1 Beta3. This redesign unifies all Windows file deletion semantics under a single file system operation that also supports the new POSIX semantics introduced in Windows 10 Redstone 1. The new Delete design is recommended for new file systems, however existing file systems will continue to work without any changes. See https://github.com/billziss-gh/winfsp/wiki/WinFsp-Delete-Redesign for more information.
+
+* [NEW] Support for `FileDispositionInformationEx` and `FileRenameInformationEx` has been added (see above).
+
+* [NEW] WinFsp now supports rebranding of the build products. This is primarily useful to commercial licensees. See https://github.com/billziss-gh/winfsp/wiki/WinFsp-Rebranding for more information.
+
+* [NEW] WinFsp-FUSE has a new capability `FSP_FUSE_CAP_DELETE_ACCESS`. If this capability is specified WinFsp will call the FUSE `access` method with the WinFsp-specific flag `FSP_FUSE_DELETE_OK` to check whether the deletion should be allowed. This can be used to disallow deletion of files and directories that would normally be allowed under the FUSE/POSIX model.
+
+* [NEW] WinFsp-FUSE has a new method for determining file access in the case where the user's primary SID (Windows Security Identifier) and group SID are the same (for example, this can happen when someone uses a Microsoft account as their primary login).
+** Previously when the user SID and group SID were the same WinFsp-FUSE looked at the UNIX permissions for the owner and the UNIX permissions for the group and used the MOST restrictive permissions, which often resulted in inadvertent "access denied" errors. (For example, if the owner permission was `rw-` and the group permission was `---` the result was `---` and therefore access denied).
+** Going forward this behavior will change. The user and group mode permissions will not be considered together even in the case where the user SID and group SID are the same. This will resolve the access denied errors.
+** However to preserve backward compatibility (there might be some file systems that rely on the old behavior) we will do so in stages. For release v1.10 (2021.1) there is a new registry setting under `HKLM\SOFTWARE\WinFsp` (or `HKLM\SOFTWARE\WOW6432Node\WinFsp` on a 64-bit system) called `DistinctPermsForSameOwnerGroup`, which if set to 1 will direct WinFsp-FUSE to use the new behavior. The default value is 0 which directs WinFsp-FUSE to use the old behavior. This default will change in a future release.
+
+* [NEW] A new registry setting under `HKLM\SOFTWARE\WinFsp` (or `HKLM\SOFTWARE\WOW6432Node\WinFsp` on a 64-bit system) called `MountDoNotUseLauncher` has been introduced, which if set to 1 will disable the use of the Launcher during mounting. The default value is 0 which allows the use of the Launcher during mounting in those rare cases when necessary. (In general the Launcher is not necessary for mounting. However when running a file system in the Windows Service context (session 0) under an account that is not LocalSystem (e.g. `NT AUTHORITY\NETWORK SERVICE`), the Launcher is used to create global drives.)
+
+* [FIX] File share access when overwriting a file (e.g. when using `TRUNCATE_EXISTING`) is now done in a manner compatible with NTFS (previously there were cases when overwriting a file where behavior diverged from the NTFS one). (See GitHub issue #364.)
+
+* [FIX] The FSD will now report a file's reparse tag in the `EaSize` field of `FILE_FULL_DIR_INFORMATION` and friends. This fixes problems such as `cmd.exe` not recognizing symlinks in a `dir` command. (See GitHub issue #380.)
+
+* [FIX] Fixed a problem in the file system shutdown protocol which resolves an occasional access violation in the user mode file system process. Previously it was possible for a file system to crash when stopping itself using `FspFileSystemStopDispatcher`; this problem has been rectified. (See GitHub issue #369.)
+
+* [FIX] Fixed a problem in the FUSE layer where in some rare circumstances the `release` operation could be called with an uninitialized `path` argument. (See GitHub issue billziss-gh/cgofuse#58 and commit f51bdef53427d1bba688fb6c768792fdc22ffc7b).
+
+* [FIX] Fixed a potential problem when launching file system instances using the Launcher. (See GitHub issue #356.)
+
+* [FIX] The `winfsp.h` header no longer defines `FILE_FULL_EA_INFORMATION` when compiled under mingw. This is because the mingw tool chain already includes a definition of this type. (GitHub PR #371. Thanks @lemourin.)
+
+
+v1.10B2 (2021.1 Beta2)::
+
+Changes since v1.9:
+
+* [NEW] WinFsp now supports rebranding of the build products. This is primarily useful to commercial licensees. See https://github.com/billziss-gh/winfsp/wiki/WinFsp-Rebranding for more information.
+
+* [NEW] WinFsp-FUSE has a new method for determining file access in the case where the user's primary SID (Windows Security Identifier) and group SID are the same (for example, this can happen when someone uses a Microsoft account as their primary login).
+** Previously when the user SID and group SID were the same WinFsp-FUSE looked at the UNIX permissions for the owner and the UNIX permissions for the group and used the MOST restrictive permissions, which often resulted in inadvertent "access denied" errors. (For example, if the owner permission was `rw-` and the group permission was `---` the result was `---` and therefore access denied).
+** Going forward this behavior will change. The user and group mode permissions will not be considered together even in the case where the user SID and group SID are the same. This will resolve the access denied errors.
+** However to preserve backward compatibility (there might be some file systems that rely on the old behavior) we will do so in stages. For release v1.10 (2021.1) there is a new registry setting under `HKLM\SOFTWARE\WinFsp` (or `HKLM\SOFTWARE\WOW6432Node\WinFsp` on a 64-bit system) called `DistinctPermsForSameOwnerGroup`, which if set to 1 will direct WinFsp-FUSE to use the new behavior. The default value is 0 which directs WinFsp-FUSE to use the old behavior. This default will change in a future release.
+
+* [NEW] A new registry setting under `HKLM\SOFTWARE\WinFsp` (or `HKLM\SOFTWARE\WOW6432Node\WinFsp` on a 64-bit system) called `MountDoNotUseLauncher` has been introduced, which if set to 1 will disable the use of the Launcher during mounting. The default value is 0 which allows the use of the Launcher during mounting in those rare cases when necessary. (In general the Launcher is not necessary for mounting. However when running a file system in the Windows Service context (session 0) under an account that is not LocalSystem (e.g. `NT AUTHORITY\NETWORK SERVICE`), the Launcher is used to create global drives.)
+
+* [FIX] File share access when overwriting a file (e.g. when using `TRUNCATE_EXISTING`) is now done in a manner compatible with NTFS (previously there were cases when overwriting a file where behavior diverged from the NTFS one). (See GitHub issue #364.)
+
+* [FIX] Fixed a problem in the file system shutdown protocol which resolves an occasional access violation in the user mode file system process. Previously it was possible for a file system to crash when stopping itself using `FspFileSystemStopDispatcher`; this problem has been rectified. (See GitHub issue #369.)
+
+* [FIX] Fixed a problem in the FUSE layer where in some rare circumstances the `release` operation could be called with an uninitialized `path` argument. (See GitHub issue billziss-gh/cgofuse#58 and commit f51bdef53427d1bba688fb6c768792fdc22ffc7b).
+
+* [FIX] The `winfsp.h` header no longer defines `FILE_FULL_EA_INFORMATION` when compiled under mingw. This is because the mingw tool chain already includes a definition of this type. (GitHub PR #371. Thanks @lemourin.)
+
+
+v1.10B1 (2021.1 Beta1)::
+
+Changes since v1.9:
+
+* [NEW] WinFsp now supports rebranding of the build products. This is primarily useful to commercial licensees. See https://github.com/billziss-gh/winfsp/wiki/WinFsp-Rebranding for more information.
+
+* [NEW] WinFsp-FUSE has a new method for determining file access in the case where the user's primary SID (Windows Security Identifier) and group SID are the same (for example, this can happen when someone uses a Microsoft account as their primary login).
+** Previously when the user SID and group SID were the same WinFsp-FUSE looked at the UNIX permissions for the owner and the UNIX permissions for the group and used the MOST restrictive permissions, which often resulted in inadvertent "access denied" errors. (For example, if the owner permission was `rw-` and the group permission was `---` the result was `---` and therefore access denied).
+** Going forward this behavior will change. The user and group mode permissions will not be considered together even in the case where the user SID and group SID are the same. This will resolve the access denied errors.
+** However to preserve backward compatibility (there might be some file systems that rely on the old behavior) we will do so in stages. For release v1.10 (2021.1) there is a new registry setting under `HKLM\SOFTWARE\WinFsp` (or `HKLM\SOFTWARE\WOW6432Node\WinFsp` on a 64-bit system) called `DistinctPermsForSameOwnerGroup`, which if set to 1 will direct WinFsp-FUSE to use the new behavior. The default value is 0 which directs WinFsp-FUSE to use the old behavior. This default will change in a future release.
+
+* [FIX] File share access when overwriting a file (e.g. when using `TRUNCATE_EXISTING`) is now done in a manner compatible with NTFS (previously there were cases when overwriting a file where behavior diverged from the NTFS one). (See GitHub issue #364.)
+
+* [FIX] Fixed a problem in the file system shutdown protocol which resolves an occasional access violation in the user mode file system process. Previously it was possible for a file system to crash when stopping itself using `FspFileSystemStopDispatcher`; this problem has been rectified. (See GitHub issue #369.)
+
+* [FIX] The `winfsp.h` header no longer defines `FILE_FULL_EA_INFORMATION` when compiled under mingw. This is because the mingw tool chain already includes a definition of this type. (GitHub PR #371. Thanks @lemourin.)
+
+
+v1.9 (2021)::
+
+Changes since v1.8:
+
+* [NEW] WinFsp now supports file change notifications and cache invalidations. This functionality is offered via the following new API's:
+** Native API: `FspFileSystemNotify`
+** FUSE API: `fuse_notify`
+** .NET API: `FileSystemHost.Notify`
+
+* [NEW] A native file system (notifyfs) and a .NET file system (notifyfs-dotnet) have been added to showcase the new file change notification API.
+
+* [NEW] A new WinFsp-FUSE option `FileSecurity` has been added that allows the complete specification of file security descriptors using SDDL. (See GitHub issue https://github.com/rclone/rclone/issues/4717#issuecomment-767723287.)
+
+* [FIX] The FSD now correctly handles a rare situation where receiving too many CLOSE calls from the OS (e.g. when caching thousands of files) could result in a bogus "insufficient resources" error. (See commit 0af0bfbe7c45e353d693a2a45965d99fa81f2163.)
+
+* [FIX] WinFsp-FUSE correctly maps SID's from trusted domains to POSIX UID's in a multi-domain environment (using the "trustPosixOffset" attribute). Previously WinFsp-FUSE only handled SID's from the primary domain correctly.
+
+* [FIX] WinFsp-FUSE options such as `volname`, `VolumePrefix`, `FileSystemName`, `ExactFileSystemName` are now truncated when too long. (See GitHub issue #311.)
+
+* [FIX] The WinFsp driver is now started in a thread-safe manner if it is not already running. (See GitHub issue billziss-gh/cgofuse#51.)
+
+* [FIX] Credentials entered in the Credentials dialog (when mapping network drives) are no longer saved by default. (See GitHub PR #342. Thanks @gaotxg.)
+
+
+v1.9B2 (2021 Beta2)::
+
+Changes since v1.8:
+
+* [NEW] WinFsp now supports file change notifications and cache invalidations. This functionality is offered via the following new API's:
+** Native API: `FspFileSystemNotify`
+** FUSE API: `fuse_notify`
+** .NET API: `FileSystemHost.Notify`
+
+* [NEW] A native file system (notifyfs) and a .NET file system (notifyfs-dotnet) have been added to showcase the new file change notification API.
+
+* [NEW] A new WinFsp-FUSE option `FileSecurity` has been added that allows the complete specification of file security descriptors using SDDL. (See GitHub issue https://github.com/rclone/rclone/issues/4717#issuecomment-767723287.)
+
+* [FIX] The FSD now correctly handles a rare situation where receiving too many CLOSE calls from the OS (e.g. when caching thousands of files) could result in a bogus "insufficient resources" error. (See commit 0af0bfbe7c45e353d693a2a45965d99fa81f2163.)
+
+* [FIX] WinFsp-FUSE correctly maps SID's from trusted domains to POSIX UID's in a multi-domain environment (using the "trustPosixOffset" attribute). Previously WinFsp-FUSE only handled SID's from the primary domain correctly.
+
+* [FIX] WinFsp-FUSE options such as `volname`, `VolumePrefix`, `FileSystemName`, `ExactFileSystemName` are now truncated when too long. (See GitHub issue #311.)
+
+* [FIX] The WinFsp driver is now started in a thread-safe manner if it is not already running. (See GitHub issue billziss-gh/cgofuse#51.)
+
+* [FIX] Credentials entered in the Credentials dialog (when mapping network drives) are no longer saved by default. (See GitHub PR #342. Thanks @gaotxg.)
+
+
+v1.9B1 (2021 Beta1)::
+
+Changes since v1.8:
+
+* [NEW] WinFsp now supports file change notifications and cache invalidations. This functionality is offered via the following new API's:
+** Native API: `FspFileSystemNotify`
+** FUSE API: `fuse_notify`
+** .NET API: `FileSystemHost.Notify`
+
+* [FIX] WinFsp-FUSE correctly maps SID's from trusted domains to POSIX UID's in a multi-domain environment (using the "trustPosixOffset" attribute). Previously WinFsp-FUSE only handled SID's from the primary domain correctly.
+
+
+v1.8 (2020.2)::
+
+Changes since v1.7:
+
+* [FSD] WinFsp now supports Windows containers. See the link:doc/WinFsp-Container-Support.asciidoc[WinFsp Container Support] document for details.
+
+* [FSD] The `FSP_FSCTL_QUERY_WINFSP` code provides a simple method to determine if
+the file system backing a file is a WinFsp file system. To use issue a
++
+----
+DeviceIoControl(Handle, FSP_FSCTL_QUERY_WINFSP, 0, 0, 0, 0, &Bytes, 0)
+----
++
+If the return value is TRUE this is a WinFsp file system.
+
+* [FSD] A fix regarding concurrency of READs on the same file: WinFsp was supposed to allow concurrent READ requests on the same file (e.g. two concurrent overlapped `ReadFile` requests on the same `HANDLE`) to be handled concurrently by the file system; unfortunately due to a problem in recent versions of WinFsp READ requests on the same file were serialized. This problem has now been fixed. See GitHub issue #291 for more details.
+** *NOTE*: It may be that some file system was inadvertently relying on WinFsp's implicit serialization of READs in this case. Please test your file system thoroughly against this version, especially with regard to READ serialization. Related XKCD: https://imgs.xkcd.com/comics/workflow.png
+
+* [FSD] When renaming files or directories NTFS allows the target name to contain a backslash at the end (even for files!) whereas WinFsp did not. This problem has been fixed and a test has been added in `winfsp-tests`.
+
+
+v1.8B3 (2020.2 B2)::
+
+Changes since v1.7:
+
+* [FSD] WinFsp now supports Windows containers. See the link:doc/WinFsp-Container-Support.asciidoc[WinFsp Container Support] document for details.
+
+* [FSD] The `FSP_FSCTL_QUERY_WINFSP` code provides a simple method to determine if
+the file system backing a file is a WinFsp file system. To use issue a
++
+----
+DeviceIoControl(Handle, FSP_FSCTL_QUERY_WINFSP, 0, 0, 0, 0, &Bytes, 0)
+----
++
+If the return value is TRUE this is a WinFsp file system.
+
+* [FSD] A fix regarding concurrency of READs on the same file: WinFsp was supposed to allow concurrent READ requests on the same file (e.g. two concurrent overlapped `ReadFile` requests on the same `HANDLE`) to be handled concurrently by the file system; unfortunately due to a problem in recent versions of WinFsp READ requests on the same file were serialized. This problem has now been fixed. See GitHub issue #291 for more details.
+** *NOTE*: It may be that some file system was inadvertently relying on WinFsp's implicit serialization of READs in this case. Please test your file system thoroughly against this version, especially with regard to READ serialization. Related XKCD: https://imgs.xkcd.com/comics/workflow.png
+
+* [FSD] When renaming files or directories NTFS allows the target name to contain a backslash at the end (even for files!) whereas WinFsp did not. This problem has been fixed and a test has been added in `winfsp-tests`.
+
+
+v1.8B2 (2020.2 B2)::
+
+Changes since v1.7:
+
+* [FSD] WinFsp now supports Windows containers. See the link:doc/WinFsp-Container-Support.asciidoc[WinFsp Container Support] document for details.
+
+* [FSD] The `FSP_FSCTL_QUERY_WINFSP` code provides a simple method to determine if
+the file system backing a file is a WinFsp file system. To use issue a
++
+----
+DeviceIoControl(Handle, FSP_FSCTL_QUERY_WINFSP, 0, 0, 0, 0, &Bytes, 0)
+----
++
+If the return value is TRUE this is a WinFsp file system.
+
+* [FSD] A fix regarding concurrency of READs on the same file: WinFsp was supposed to allow concurrent READ requests on the same file (e.g. two concurrent overlapped `ReadFile` requests on the same `HANDLE`) to be handled concurrently by the file system; unfortunately due to a problem in recent versions of WinFsp READ requests on the same file were serialized. This problem has now been fixed. See GitHub issue #291 for more details.
+** *NOTE*: It may be that some file system was inadvertently relying on WinFsp's implicit serialization of READs in this case. Please test your file system thoroughly against this version, especially with regard to READ serialization. Related XKCD: https://imgs.xkcd.com/comics/workflow.png
+
+
+v1.8B1 (2020.2 B1)::
+
+Changes since v1.7:
+
+* [FSD] WinFsp now supports Windows containers. See the link:doc/WinFsp-Container-Support.asciidoc[WinFsp Container Support] document for details.
+* [FSD] The `FSP_FSCTL_QUERY_WINFSP` code provides a simple method to determine if
+the file system backing a file is a WinFsp file system. To use issue a
++
+----
+DeviceIoControl(Handle, FSP_FSCTL_QUERY_WINFSP, 0, 0, 0, 0, &Bytes, 0)
+----
++
+If the return value is TRUE this is a WinFsp file system.
+
+
+v1.7 (2020.1)::
+
+Changes since v1.6:
+
+* [FUSE] FUSE invalid directory entries no longer break the entire directory listing. Such invalid directory entries are logged. (GitHub PR #292.)
+* [LAUNCH] The Launcher can now restart file systems that have crashed. Set `Recovery=1` in the file system's registry entry.
+* [LAUNCH] The Launcher can now redirect file system standard error output. Set `Stderr=PATH` in the file system's registry entry.
+* [FIX] Work around a problem in CreateProcess/CreateSection that allowed a faulty or malicious file system to bugcheck Windows.
+* [FIX] Work around an incompatibility with Avast Antivirus.
+** Native and .NET file systems that experience this problem should set the flag `RejectIrpPriorToTransact0` in `FSP_FSCTL_VOLUME_PARAMS` to `1`. This is only required when mounting on a directory with Avast Antivirus present.
+** FUSE file systems do not need to do anything special as this flag is always enabled.
+* [FIX] Fix junction (mount point reparse point) handling. (GitHub issue #269.)
+
+
+v1.7B2 (2020.1 B2)::
+
+Changes since v1.6:
+
+* [FUSE] FUSE invalid directory entries no longer break the entire directory listing. Such invalid directory entries are logged. (GitHub PR #292.)
+* [LAUNCH] The Launcher can now restart file systems that have crashed. Set `Recovery=1` in the file system's registry entry.
+* [LAUNCH] The Launcher can now redirect file system standard error output. Set `Stderr=PATH` in the file system's registry entry.
+* [FIX] Work around a problem in CreateProcess/CreateSection that allowed a faulty or malicious file system to bugcheck Windows.
+* [FIX] Work around an incompatibility with Avast Antivirus.
+** Native and .NET file systems that experience this problem should set the flag `RejectIrpPriorToTransact0` in `FSP_FSCTL_VOLUME_PARAMS` to `1`. This is only required when mounting on a directory with Avast Antivirus present.
+** FUSE file systems do not need to do anything special as this flag is always enabled.
+* [FIX] Fix junction (mount point reparse point) handling. (GitHub issue #269.)
+
+
+v1.7B1 (2020.1 B1)::
+
+Changes since v1.6:
+
+* [FIX] Workaround an incompatibility with Avast Antivirus. (GitHub issue #221.)
+* [FIX] Fix junction (mount point reparse point) handling. (GitHub issue #269.)
+
+
+v1.6 (2020)::
+
+Changes since v1.5:
+
+* [FIX] Do no pass `O_APPEND` flag to FUSE file systems, which would result in data corruption under some circumstances. (See PR #272. Thanks @pfrejo.)
+* [FIX] Fix how rename target directories are opened (use `FILE_DIRECTORY_FILE`). (See PR #270. Thanks @hammerg.)
+
+
+v1.5 (2019.3)::
+
+Changes since v1.4:
+
+* [GEN] WinFsp file systems can now be used by WSLinux. File systems must enable this support by setting the `FSP_FSCTL_VOLUME_PARAMS::WslFeatures` bit. Use the command `sudo mount -t drvfs x: /mnt/x` to mount.
+* [GEN] Extended attribute support has been added for all WinFsp API's: native, .NET, FUSE2 and FUSE3.
+* [GEN] Mount Manager support has been added and it works for current and new file systems:
+** If the file system mountpoint is in the syntax `\\.\X:` then the Mount Manager is used.
+** If the file system mountpoint is in the syntax `X:` then `DefineDosDeviceW` is used (i.e. same as today).
+** If the file system mountpoint is in the syntax `X:\DIR` then a reparse point is used and the file system is mounted as a directory (i.e. same as today).
+** Caveats:
+*** It requires Administrator access. This is because opening the `\\.\MountPointManager` device requires Administrator access.
+*** It currently works with drives (`\\.\X:`) but not directories (`\\.\X:\DIR`).
+*** Mount Manager drives created by WinFsp are transient. WinFsp takes various steps to ensure that this is the case.
+*** Mount Manager drives are global and are visible across Terminal Services sessions (they go into the `\GLOBAL??` portion of the NT namespace).
+* [FSD] Support for kernel-mode file systems on top of WinFsp has been added. See `FspFsextProvider`. This is in preparation for WinFuse - FUSE for Windows and WSLinux.
+* [FSD] FastIO support has been added. FastIO operations are enabled on cache-enabled file systems with the notable exception of `FastIoQueryOpen`, which allows opening files in kernel mode; this operation requires the file system to specify the `FSP_FSCTL_VOLUME_PARAMS::AllowOpenInKernelMode` flag.
+* [FSD] Support for `FileFsSectorSizeInformation` and `IOCTL_STORAGE_QUERY_PROPERTY / StorageAccessAlignmentProperty` has been added.
+* [DLL] The `FspFileSystemStartDispatcher` default number of threads (`ThreadCount==0`) has been changed. See commit 3902874ac93fe40685d9761f46a96358ba24f24c for more.
+* [FUSE] FUSE has new `-o UserName=DOMAIN+USERNAME` and `-o GroupName=DOMAIN+GROUPNAME` options. These function like the `-o uid=UID` and `-o gid=GID` options, but accept Windows user and groups names.
+* [FUSE] FUSE has new `-o dothidden` option that is used to add the Windows hidden file attribute to files that start with a dot.
+* [FUSE] FUSE has new `-o create_file_umask=nnn` and `-o create_dir_umask=nnn` options that allow for more control than the `-o create_umask=nnn` option.
+* [FUSE] FUSE has new `--ExactFileSystemName=FSNAME` option that removes the "FUSE-" prefix from the file system name. (Use with caution: see discussion in PR #251.) (Thanks @johntyner.)
+* [.NET] The .NET API now supports asynchronous handling of `Read`, `Write` and `ReadDirectory`. (Thanks @dworkin.)
+* [.NET] The .NET API now supports fine-grained timeouts (`VolumeInfoTimeout`, `DirInfoTimeout`, etc).
+* [.NET] The .NET API has new method `FileSystemHost.MountEx` that adds a `ThreadCount` parameter.
+* [LAUNCH] The Launcher can now rewrite path arguments passed to file systems during launching using "Path Transformation Language". See commit a73f1b95592617ac7484e16c2e642573a4d65644 for more.
+* [MEMFS] A new memfs FUSE3 file system written in C++ has been added. See `tst/memfs-fuse3`.
+* [AIRFS] John Oberschelp has done some fantastic work adding persistence to the airfs file system. (Thanks @JohnOberschelp.)
+* [FIX] Fixes for very large (> 4GiB) files. (Thanks @dworkin.)
+* [FIX] A fix for how FUSE handles the return value from `opendir`. (GitHub issue billziss-gh/sshfs-win#54)
+* [FIX] A fix for an invalid UID to SID mapping on domains with a lot of users. (Thanks @sganis.)
+* [FIX] A fix on the C++ layer. (Thanks @colatkinson.)
+* Other fixes and improvements.
+
+
+v1.5B4 (2019.3 B4)::
+
+Changes since v1.4:
+
+* [GEN] WinFsp file systems can now be used by WSLinux. File systems must enable this support by setting the `FSP_FSCTL_VOLUME_PARAMS::WslFeatures` bit. Use the command `sudo mount -t drvfs x: /mnt/x` to mount.
+* [GEN] Extended attribute support has been added for all WinFsp API's: native, .NET, FUSE2 and FUSE3.
+* [GEN] Mount Manager support has been added and it works for current and new file systems:
+** If the file system mountpoint is in the syntax `\\.\X:` then the Mount Manager is used.
+** If the file system mountpoint is in the syntax `X:` then `DefineDosDeviceW` is used (i.e. same as today).
+** If the file system mountpoint is in the syntax `X:\DIR` then a reparse point is used and the file system is mounted as a directory (i.e. same as today).
+** Caveats:
+*** It requires Administrator access. This is because opening the `\\.\MountPointManager` device requires Administrator access.
+*** It currently works with drives (`\\.\X:`) but not directories (`\\.\X:\DIR`).
+*** Mount Manager drives created by WinFsp are transient. WinFsp takes various steps to ensure that this is the case.
+*** Mount Manager drives are global and are visible across Terminal Services sessions (they go into the `\GLOBAL??` portion of the NT namespace).
+* [FSD] Support for kernel-mode file systems on top of WinFsp has been added. See `FspFsextProvider`. This is in preparation for WinFuse - FUSE for Windows and WSLinux.
+* [FSD] FastIO support has been added. FastIO operations are enabled on cache-enabled file systems with the notable exception of `FastIoQueryOpen`, which allows opening files in kernel mode; this operation requires the file system to specify the `FSP_FSCTL_VOLUME_PARAMS::AllowOpenInKernelMode` flag.
+* [FSD] Support for `FileFsSectorSizeInformation` and `IOCTL_STORAGE_QUERY_PROPERTY / StorageAccessAlignmentProperty` has been added.
+* [DLL] The `FspFileSystemStartDispatcher` default number of threads (`ThreadCount==0`) has been changed. See commit 3902874ac93fe40685d9761f46a96358ba24f24c for more.
+* [FUSE] FUSE has new `-o UserName=DOMAIN+USERNAME` and `-o GroupName=DOMAIN+GROUPNAME` options. These function like the `-o uid=UID` and `-o gid=GID` options, but accept Windows user and groups names.
+* [FUSE] FUSE has new `-o dothidden` option that is used to add the Windows hidden file attribute to files that start with a dot.
+* [FUSE] FUSE has new `-o create_file_umask=nnn` and `-o create_dir_umask=nnn` options that allow for more control than the `-o create_umask=nnn` option.
+* [FUSE] FUSE has new `--ExactFileSystemName=FSNAME` option that removes the "FUSE-" prefix from the file system name. (Use with caution: see discussion in PR #251.) (Thanks @johntyner.)
+* [.NET] The .NET API now supports asynchronous handling of `Read`, `Write` and `ReadDirectory`. (Thanks @dworkin.)
+* [.NET] The .NET API now supports fine-grained timeouts (`VolumeInfoTimeout`, `DirInfoTimeout`, etc).
+* [.NET] The .NET API has new method `FileSystemHost.MountEx` that adds a `ThreadCount` parameter.
+* [LAUNCH] The Launcher can now rewrite path arguments passed to file systems during launching using "Path Transformation Language". See commit a73f1b95592617ac7484e16c2e642573a4d65644 for more.
+* [MEMFS] A new memfs FUSE3 file system written in C++ has been added. See `tst/memfs-fuse3`.
+* [AIRFS] John Oberschelp has done some fantastic work adding persistence to the airfs file system. (Thanks @JohnOberschelp.)
+* [FIX] Fixes for very large (> 4GiB) files. (Thanks @dworkin.)
+* [FIX] A fix for how FUSE handles the return value from `opendir`. (GitHub issue billziss-gh/sshfs-win#54)
+* [FIX] A fix for an invalid UID to SID mapping on domains with a lot of users. (Thanks @sganis.)
+* [FIX] A fix on the C++ layer. (Thanks @colatkinson.)
+* Other fixes and improvements.
+
+
+v1.5B3 (2019.3 B3)::
+
+Changes since v1.4:
+
+* [GEN] WinFsp file systems can now be used by WSLinux. Use the command `sudo mount -t drvfs x: /mnt/x` to mount.
+* [GEN] Extended attribute support has been added for all WinFsp API's: native, .NET, FUSE2 and FUSE3.
+* [GEN] Mount Manager support has been added and it works for current and new file systems:
+** If the file system mountpoint is in the syntax `\\.\X:` then the Mount Manager is used.
+** If the file system mountpoint is in the syntax `X:` then `DefineDosDeviceW` is used (i.e. same as today).
+** If the file system mountpoint is in the syntax `X:\DIR` then a reparse point is used and the file system is mounted as a directory (i.e. same as today).
+** Caveats:
+*** It requires Administrator access. This is because opening the `\\.\MountPointManager` device requires Administrator access.
+*** It currently works with drives (`\\.\X:`) but not directories (`\\.\X:\DIR`).
+*** Mount Manager drives created by WinFsp are transient. WinFsp takes various steps to ensure that this is the case.
+*** Mount Manager drives are global and are visible across Terminal Services sessions (they go into the `\GLOBAL??` portion of the NT namespace).
+* [FSD] Support for kernel-mode file systems on top of WinFsp has been added. See `FspFsextProvider`. This is in preparation for WinFuse - FUSE for Windows and WSLinux.
+* [FSD] FastIO support has been added. FastIO operations are enabled on cache-enabled file systems with the notable exception of `FastIoQueryOpen`, which allows opening files in kernel mode; this operation requires the file system to specify the `FSP_FSCTL_VOLUME_PARAMS::AllowOpenInKernelMode` flag.
+* [FSD] Support for `FileFsSectorSizeInformation` and `IOCTL_STORAGE_QUERY_PROPERTY / StorageAccessAlignmentProperty` has been added.
+* [DLL] The `FspFileSystemStartDispatcher` default number of threads (`ThreadCount==0`) has been changed. See commit 3902874ac93fe40685d9761f46a96358ba24f24c for more.
+* [FUSE] FUSE has new `-o UserName=DOMAIN+USERNAME` and `-o GroupName=DOMAIN+GROUPNAME` options. These function like the `-o uid=UID` and `-o gid=GID` options, but accept Windows user and groups names.
+* [FUSE] FUSE has new `-o dothidden` option that is used to add the Windows hidden file attribute to files that start with a dot.
+* [FUSE] FUSE has new `-o create_file_umask=nnn` and `-o create_dir_umask=nnn` options that allow for more control than the `-o create_umask=nnn` option.
+* [FUSE] FUSE has new `--ExactFileSystemName=FSNAME` option that removes the "FUSE-" prefix from the file system name. (Use with caution: see discussion in PR #251.) (Thanks @johntyner.)
+* [.NET] The .NET API now supports asynchronous handling of `Read`, `Write` and `ReadDirectory`. (Thanks @dworkin.)
+* [.NET] The .NET API now supports fine-grained timeouts (`VolumeInfoTimeout`, `DirInfoTimeout`, etc).
+* [.NET] The .NET API has new method `FileSystemHost.MountEx` that adds a `ThreadCount` parameter.
+* [LAUNCH] The Launcher can now rewrite path arguments passed to file systems during launching using "Path Transformation Language". See commit a73f1b95592617ac7484e16c2e642573a4d65644 for more.
+* [MEMFS] A new memfs FUSE3 file system written in C++ has been added. See `tst/memfs-fuse3`.
+* [AIRFS] John Oberschelp has done some fantastic work adding persistence to the airfs file system. (Thanks @JohnOberschelp.)
+* [FIX] Fixes for very large (> 4GiB) files. (Thanks @dworkin.)
+* [FIX] A fix for how FUSE handles the return value from `opendir`. (GitHub issue billziss-gh/sshfs-win#54)
+* [FIX] A fix for an invalid UID to SID mapping on domains with a lot of users. (Thanks @sganis.)
+* [FIX] A fix on the C++ layer. (Thanks @colatkinson.)
+* Other fixes and improvements.
+
+
+v1.5B2 (2019.3 B2)::
+
+Changes since v1.4:
+
+* [GEN] WinFsp file systems can now be used by WSLinux. Use the command `sudo mount -t drvfs x: /mnt/x` to mount.
+* [GEN] Extended attribute support has been added for all WinFsp API's: native, .NET, FUSE2 and FUSE3.
+* [FSD] Support for kernel-mode file systems on top of WinFsp has been added. See `FspFsextProvider`. This is in preparation for WinFuse - FUSE for Windows and WSLinux.
+* [FSD] FastIO support has been added. FastIO operations are enabled on cache-enabled file systems with the notable exception of `FastIoQueryOpen`, which allows opening files in kernel mode; this operation requires the file system to specify the `FSP_FSCTL_VOLUME_PARAMS::AllowOpenInKernelMode` flag.
+* [DLL] The `FspFileSystemStartDispatcher` default number of threads (`ThreadCount==0`) has been changed. See commit 3902874ac93fe40685d9761f46a96358ba24f24c for more.
+* [FUSE] FUSE has new `-o UserName=DOMAIN\USERNAME` and `-o GroupName=DOMAIN\GROUPNAME` options. These function like the `-o uid=UID` and `-o gid=GID` options, but accept Windows user and groups names.
+* [FUSE] FUSE has new `-o dothidden` option that is used to add the Windows hidden file attribute to files that start with a dot.
+* [FUSE] FUSE has new `-o create_file_umask=nnn` and `-o create_dir_umask=nnn` options that allow for more control than the `-o create_umask=nnn` option.
+* [.NET] The .NET API now supports asynchronous handling of `Read`, `Write` and `ReadDirectory`. (Thanks @dworkin.)
+* [.NET] The .NET API now supports fine-grained timeouts (`VolumeInfoTimeout`, `DirInfoTimeout`, etc).
+* [.NET] The .NET API has new method `FileSystemHost.MountEx` that adds a `ThreadCount` parameter.
+* [LAUNCH] The Launcher can now rewrite path arguments passed to file systems during launching using "Path Transformation Language". See commit a73f1b95592617ac7484e16c2e642573a4d65644 for more.
+* [FIX] Fixes for very large (> 4GiB) files. (Thanks @dworkin.)
+* [FIX] A fix for how FUSE handles the return value from `opendir`. (GitHub issue billziss-gh/sshfs-win#54)
+* [FIX] A fix for an invalid UID to SID mapping on domains with a lot of users. (Thanks @sganis.)
+* [FIX] A fix on the C++ layer. (Thanks @colatkinson.)
+* Other fixes and improvements.
+
+
+v1.5B1 (2019.3 B1)::
+
+Changes since v1.4:
+
+* Extended attribute support has been added for all WinFsp API's: native, .NET, FUSE2 and FUSE3.
+* Initial FastIO support has been added. FastIO operations are enabled on cache-enabled file systems with the notable exception of `FastIoQueryOpen`, which allows opening files in kernel mode; this operation requires the file system to specify the `FSP_FSCTL_VOLUME_PARAMS::AllowOpenInKernelMode` flag.
+* Fixes for very large (> 4GiB) files. (Thanks @dworkin.)
+* A fix for an invalid UID to SID mapping on domains with a lot of users. (Thanks @sganis.)
+* A fix on the C++ layer. (Thanks @colatkinson.)
+
+
+v1.4.19049 (2019.2)::
+
+Changes since v1.3:
+
+* FUSE3 API (version 3.2) is now available. The FUSE2 API (version 2.8) also remains supported.
+* New `Control` file system operation allows sending custom control codes to the file system using the Windows `DeviceIoControl` API. FUSE `ioctl` is also supported.
+* New `SetDelete` file system operation can optionally be used instead of `CanDelete`. `SetDelete` or `CanDelete` are used to handle the file "disposition" flag, which determines if a file is marked for deletion. See the relevant documentation for more details.
+* `FlushAndPurgeOnCleanup` has now been added to the .NET API. (GitHub PR #176; thanks @FrKaram.)
+* The Launcher now supports running file systems under the user account that started them. Use `RunAs="."` in the file system registry entry.
+* New sample file system "airfs" contributed by @JohnOberschelp. Airfs is an in-memory file system like Memfs on which it is based on; it has received substantial improvements in how the file name space is maintained and has been modified to use modern C++ techniques by John.
+* New sample file system "passthrough-fuse3" passes all operations to an underlying file system. This file system is built using the FUSE3 API. It builds and runs on both Windows and Cygwin.
+* The FUSE layer now supports multiple file systems within a single process. This is a long standing problem that has been fixed. (GitHub issue #135.)
+* The FSD includes a fix for a Windows problem: that case-sensitive file systems do not work properly when mounted as directories. See FAQ entry #3.
+* The FSD includes a fix for a rare but serious problem. (GitHub issue #177. Thanks @thinkport.)
+* The FSD includes a fix for an incompatibility with DrWeb Antivirus. (GitHub issue #192)
+* The DLL includes a fix for an errorenous `STATUS_ACCESS_DENIED` on read-only directories. (GitHub issue #190. Thanks @alfaunits.)
+* The FUSE layer includes a fix for the `ioctl` operation. (GitHub PR #214. Thanks @felfert.)
+
+
+v1.4 (2019.1)::
+
+Changes since v1.3:
+
+* FUSE3 API (version 3.2) is now available. The FUSE2 API (version 2.8) also remains supported.
+* New `Control` file system operation allows sending custom control codes to the file system using the Windows `DeviceIoControl` API. FUSE `ioctl` is also supported.
+* New `SetDelete` file system operation can optionally be used instead of `CanDelete`. `SetDelete` or `CanDelete` are used to handle the file "disposition" flag, which determines if a file is marked for deletion. See the relevant documentation for more details.
+* `FlushAndPurgeOnCleanup` has now been added to the .NET API. (GitHub PR #176; thanks @FrKaram.)
+* The Launcher now supports running file systems under the user account that started them. Use `RunAs="."` in the file system registry entry.
+* New sample file system "airfs" contributed by @JohnOberschelp. Airfs is an in-memory file system like Memfs on which it is based on; it has received substantial improvements in how the file name space is maintained and has been modified to use modern C++ techniques by John.
+* New sample file system "passthrough-fuse3" passes all operations to an underlying file system. This file system is built using the FUSE3 API. It builds and runs on both Windows and Cygwin.
+* The FUSE layer now supports multiple file systems within a single process. This is a long standing problem that has been fixed. (GitHub issue #135.)
+* The FSD includes a fix for a Windows problem: that case-sensitive file systems do not work properly when mounted as directories. See FAQ entry #3.
+* The FSD includes a fix for a rare but serious problem. (GitHub issue #177. Thanks @thinkport.)
+* The FSD includes a fix for an incompatibility with DrWeb Antivirus. (GitHub issue #192)
+* The DLL includes a fix for an errorenous `STATUS_ACCESS_DENIED` on read-only directories. (GitHub issue #190. Thanks @alfaunits.)
+
+
+v1.4B4 (2018.2 B4)::
+
+Changes since v1.3:
+
+* FUSE3 API (version 3.2) is now available. The FUSE2 API (version 2.8) also remains supported.
+* New `Control` file system operation allows sending custom control codes to the file system using the Windows `DeviceIoControl` API. FUSE `ioctl` is also supported.
+* New `SetDelete` file system operation can optionally be used instead of `CanDelete`. `SetDelete` or `CanDelete` are used to handle the file "disposition" flag, which determines if a file is marked for deletion. See the relevant documentation for more details.
+* `FlushAndPurgeOnCleanup` has now been added to the .NET API. (GitHub PR #176; thanks @FrKaram.)
+* The Launcher now supports running file systems under the user account that started them. Use `RunAs="."` in the file system registry entry.
+* New sample file system "airfs" contributed by @JohnOberschelp. Airfs is an in-memory file system like Memfs on which it is based on; it has received substantial improvements in how the file name space is maintained and has been modified to use modern C++ techniques by John.
+* New sample file system "passthrough-fuse3" passes all operations to an underlying file system. This file system is built using the FUSE3 API. It builds and runs on both Windows and Cygwin.
+* The FUSE layer now supports multiple file systems within a single process. This is a long standing problem that has been fixed. (GitHub issue #135.)
+* The FSD includes a fix for a Windows problem: that case-sensitive file systems do not work properly when mounted as directories. See FAQ entry #3.
+* The FSD includes a fix for a rare but serious problem. (GitHub issue #177. Thanks @thinkport.)
+* The FSD includes a fix for an incompatibility with DrWeb Antivirus. (GitHub issue #192)
+* The DLL includes a fix for an errorenous `STATUS_ACCESS_DENIED` on read-only directories. (GitHub issue #190. Thanks @alfaunits.)
+
+
+v1.4B3 (2018.2 B3)::
+
+Changes since v1.3:
+
+* FUSE3 API (version 3.2) is now available. The FUSE2 API (version 2.8) also remains supported.
+* New `Control` file system operation allows sending custom control codes to the file system using the Windows `DeviceIoControl` API. FUSE `ioctl` is also supported.
+* New `SetDelete` file system operation can optionally be used instead of `CanDelete`. `SetDelete` or `CanDelete` are used to handle the file "disposition" flag, which determines if a file is marked for deletion. See the relevant documentation for more details.
+* `FlushAndPurgeOnCleanup` has now been added to the .NET API. (GitHub PR #176; thanks @FrKaram.)
+* New sample file system "airfs" contributed by @JohnOberschelp. Airfs is an in-memory file system like Memfs on which it is based on; it has received substantial improvements in how the file name space is maintained and has been modified to use modern C++ techniques by John.
+* New sample file system "passthrough-fuse3" passes all operations to an underlying file system. This file system is built using the FUSE3 API. It builds and runs on both Windows and Cygwin.
+* The FUSE layer now supports multiple file systems within a single process. This is a long standing problem that has been fixed. (GitHub issue #135.)
+* The FSD includes an experimental fix for a Windows problem: that case-sensitive file systems do not work properly when mounted as directories. See the relevant FAQ entry.
+* The FSD includes a fix for an incompatibility with DrWeb Antivirus. (GitHub issue #192)
+
+
+v1.4B2 (2018.2 B2)::
+
+Changes since v1.3:
+
+* FUSE3 API (version 3.2) is now available. The FUSE2 API (version 2.8) also remains supported.
+* New `Control` file system operation allows sending custom control codes to the file system using the Windows `DeviceIoControl` API. FUSE `ioctl` is also supported.
+* `FlushAndPurgeOnCleanup` has now been added to the .NET API. (GitHub PR #176; thanks @FrKaram.)
+* New sample file system "airfs" contributed by @JohnOberschelp. Airfs is an in-memory file system like Memfs on which it is based on; it has received substantial improvements in how the file name space is maintained and has been modified to use modern C++ techniques by John.
+* New sample file system "passthrough-fuse3" passes all operations to an underlying file system. This file system is built using the FUSE3 API. It builds and runs on both Windows and Cygwin.
+* The FUSE layer now supports multiple file systems within a single process. This is a long standing problem that has been fixed. (GitHub issue #135.)
+
+
+v1.4B1 (2018.2 B1)::
+
+Changes since v1.3:
+
+* New `Control` file system operation allows sending custom control codes to the file system using the Windows `DeviceIoControl` API.
+
+
+v1.3 (2018.1)::
+
+Changes since v1.2POST1:
+
+* Multiple Launcher changes:
+** New `FspLaunch` API. File systems can be started, stopped, queried and listed using `FspLaunchStart`, `FspLaunchStop`, `FspLaunchGetInfo` and `FspLaunchGetNameList`. The API is available in <winfsp/launch.h>
+** New Launcher registry settings `RunAs` and `WorkDirectory`. `RunAs` allows the laucher to launch a file system process under the service accounts LocalService and NetworkService. `WorkDirectory` can be used to specify the work directory for a newly launched file system process.
+* `FSP_FSCTL_VOLUME_PARAMS::FlushAndPurgeOnCleanup` limits the time that Windows keeps files open after an application has closed them. This purges the cache on the last `CloseHandle`, which is a performance drawback.
+** This is now the default behavior on FUSE. To revert to the previous behavior of keeping files open indefinitely use `-o KeepFileCache`.
+* `FSP_FSCTL_VOLUME_PARAMS` has been extended with fine-grained timeouts: `VolumeInfoTimeout`, `DirInfoTimeout`, `SecurityTimeout`, `StreamInfoTimeout`. Set `FSP_FSCTL_VOLUME_PARAMS::Version == sizeof(FSP_FSCTL_VOLUME_PARAMS)` to access the new fields.
+** New FUSE optons `VolumeInfoTimeout`, `DirInfoTimeout` complement the existing `FileInfoTimeout`.
+* The FSD (File System Driver) and its interaction with the Windows MUP (Multiple UNC Provider) has been changed. In practice this eliminates the delays experienced when right-clicking on a WinFsp-backed network drive in the Windows Explorer. (GitHub issue #87.)
+* The WinFsp network provider is now added first in the provider order list. Previously it was added last. (GitHub PR #131; thanks @felfert.)
+* The WinFsp installer now uses the Wix `Provides` dependency extension to provide a `WinFsp` dependency key. (GitHub PR #129; thanks @felfert.)
+* New FUSE `create_umask` option. (GitHub issue #138.)
+* Fix C++ compilation error for WinFsp-FUSE. (GitHub PR #154; thanks @benrubson.)
+
+
+v1.3B3 (2018.1 B3)::
+
+Changes since v1.2POST1:
+
+* Multiple Launcher changes:
+** New `FspLaunch` API. File systems can be started, stopped, queried and listed using `FspLaunchStart`, `FspLaunchStop`, `FspLaunchGetInfo` and `FspLaunchGetNameList`. The API is available in <winfsp/launch.h>
+** New Launcher registry settings `RunAs` and `WorkDirectory`. `RunAs` allows the laucher to launch a file system process under the service accounts LocalService and NetworkService. `WorkDirectory` can be used to specify the work directory for a newly launched file system process.
+* `FSP_FSCTL_VOLUME_PARAMS::FlushAndPurgeOnCleanup` limits the time that Windows keeps files open after an application has closed them. This purges the cache on the last `CloseHandle`, which is a performance drawback.
+** This is now the default behavior on FUSE. To revert to the previous behavior of keeping files open indefinitely use `-o KeepFileCache`.
+* `FSP_FSCTL_VOLUME_PARAMS` has been extended with fine-grained timeouts: `VolumeInfoTimeout`, `DirInfoTimeout`, `SecurityTimeout`, `StreamInfoTimeout`. Set `FSP_FSCTL_VOLUME_PARAMS::Version == sizeof(FSP_FSCTL_VOLUME_PARAMS)` to access the new fields.
+** New FUSE optons `VolumeInfoTimeout`, `DirInfoTimeout` complement the existing `FileInfoTimeout`.
+* The FSD (File System Driver) and its interaction with the Windows MUP (Multiple UNC Provider) has been changed. In practice this eliminates the delays experienced when right-clicking on a WinFsp-backed network drive in the Windows Explorer. (GitHub issue #87.)
+* The WinFsp network provider is now added first in the provider order list. Previously it was added last. (GitHub PR #131; thanks @felfert.)
+* The WinFsp installer now uses the Wix `Provides` dependency extension to provide a `WinFsp` dependency key. (GitHub PR #129; thanks @felfert.)
+* New FUSE `create_umask` option. (GitHub issue #138.)
+* Fix C++ compilation error for WinFsp-FUSE. (GitHub PR #154; thanks @benrubson.)
+* *NOTE*: Prior v1.3 betas run the MEMFS sample file systems under the LocalService account. This is no longer the case: going forward the MEMFS file systems will be running under the LocalSystem account (as in v1.2POST1).
+
+
+v1.3B2 (2018.1 B2)::
+
+Changes since v1.2POST1:
+
+* Multiple Launcher changes:
+** New `FspLaunch` API. File systems can be started, stopped, queried and listed using `FspLaunchStart`, `FspLaunchStop`, `FspLaunchGetInfo` and `FspLaunchGetNameList`.
+** New Launcher registry settings `RunAs` and `WorkDirectory`. `RunAs` allows the laucher to launch a file system process under the service accounts LocalService and NetworkService. `WorkDirectory` can be used to specify the work directory for a newly launched file system process.
+* The MEMFS sample file systems are now launched under the LocalService account.
+* The FSD (File System Driver) and its interaction with the Windows MUP (Multiple UNC Provider) has been changed. In practice this eliminates the delays experienced when right-clicking on a WinFsp-backed network drive in the Windows Explorer. (GitHub issue #87.)
+* The WinFsp network provider is now added first in the provider order list. Previously it was added last. (GitHub PR #131; thanks @felfert.)
+* The WinFsp installer now uses the Wix `Provides` dependency extension to provide a `WinFsp` dependency key. (GitHub PR #129; thanks @felfert.)
+
+
+v1.3B1 (2018.1 B1)::
+
+Changes since v1.2POST1:
+
+- The WinFsp Launcher can now be controlled by the new `FspLaunch` API. File systems can be started, stopped, queried and listed using `FspLaunchStart`, `FspLaunchStop`, `FspLaunchGetInfo` and `FspLaunchGetNameList`.
+- The WinFsp launcher now supports new registry settings `RunAs` and `WorkDirectory`. `RunAs` allows the laucher to launch a file system process under the service accounts LocalService and NetworkService. `WorkDirectory` can be used to specify the work directory for a newly launched file system process.
+- The MEMFS sample file systems are now launched under the LocalService account.
+- The WinFsp network provider is now added first in the provider order list. Previously it was added last. (GitHub PR #131; thanks @felfert.)
+- The WinFsp installer now uses the Wix `Provides` dependency extension to provide a `WinFsp` dependency key. (GitHub PR #129; thanks @felfert.)
+
+
+v1.2POST1 (2017.2; issue #127)::
+
+Changes since v1.1:
+
+- WinFsp-FUSE now supports BSD flags (Windows file attributes) during `getattr` and `fgetattr`. It also adds the `chflags` operation. BSD flags support requires use of the `FSP_FUSE_CAP_STAT_EX` capability and the new `struct fuse_stat_ex` which includes an `st_flags` field. If the preprocessor macro `FSP_FUSE_USE_STAT_EX` is defined before inclusion of `<fuse.h>` then `struct fuse_stat` will also be defined to include the `st_flags` field.
+- WinFsp-FUSE also adds the following OSXFUSE operations: `setcrtime`, `setchgtime`. These can be used to set the creation (birth) time and change (ctime) time of a file.
+- New `GetDirInfoByName` file system operation adds fast queries of directory info by file name rather than pattern [e.g. `FindFirstFileW(L"foobar", FindData)`]. Tests with fsbench showed that such queries are sped up by an order of magnitude when using `GetDirInfoByName` in MEMFS. Case-sensitive FUSE file systems get this optimization for free. The .NET layer also adds `GetDirInfoByName`.
+- New `FspFileSystemOperationProcessId` API adds support for getting the originating process ID (PID) during `Create`, `Open` and `Rename` calls. FUSE file systems can now access `fuse_context::pid`. The .NET layer also adds `GetOperationProcessId`.
+- New command line tool `fsptool` allows command line access to some WinFsp features.
+- The WinFsp launcher now passes the name of the user who launched the file system as a special parameter %U. This is useful to file systems that use the launcher infrastructure, such as SSHFS-Win. [Please note that in earlier betas the user name was passed as parameter %3; the previous method was insecure and is no longer supported.]
+- Important GitHub issues fixed: #96, #97, #103, #107, #127
+
+
+v1.2 (2017.2)::
+
+Changes since v1.1:
+
+- WinFsp-FUSE now supports BSD flags (Windows file attributes) during `getattr` and `fgetattr`. It also adds the `chflags` operation. BSD flags support requires use of the `FSP_FUSE_CAP_STAT_EX` capability and the new `struct fuse_stat_ex` which includes an `st_flags` field. If the preprocessor macro `FSP_FUSE_USE_STAT_EX` is defined before inclusion of `<fuse.h>` then `struct fuse_stat` will also be defined to include the `st_flags` field.
+- WinFsp-FUSE also adds the following OSXFUSE operations: `setcrtime`, `setchgtime`. These can be used to set the creation (birth) time and change (ctime) time of a file.
+- New `GetDirInfoByName` file system operation adds fast queries of directory info by file name rather than pattern [e.g. `FindFirstFileW(L"foobar", FindData)`]. Tests with fsbench showed that such queries are sped up by an order of magnitude when using `GetDirInfoByName` in MEMFS. Case-sensitive FUSE file systems get this optimization for free. The .NET layer also adds `GetDirInfoByName`.
+- New `FspFileSystemOperationProcessId` API adds support for getting the originating process ID (PID) during `Create`, `Open` and `Rename` calls. FUSE file systems can now access `fuse_context::pid`. The .NET layer also adds `GetOperationProcessId`.
+- New command line tool `fsptool` allows command line access to some WinFsp features.
+- The WinFsp launcher now passes the name of the user who launched the file system as a special parameter %U. This is useful to file systems that use the launcher infrastructure, such as SSHFS-Win. [Please note that in earlier betas the user name was passed as parameter %3; the previous method was insecure and is no longer supported.]
+- Important GitHub issues fixed: #96, #97, #103, #107
+
+
+v1.2B3 (2017.2 B3)::
+
+Changes since v1.1:
+
+- WinFsp-FUSE now supports BSD flags (Windows file attributes) during `getattr` and `fgetattr`. It also adds the `chflags` operation. BSD flags support requires use of the `FSP_FUSE_CAP_STAT_EX` capability and the new `struct fuse_stat_ex` which includes an `st_flags` field. If the preprocessor macro `FSP_FUSE_USE_STAT_EX` is defined before inclusion of `<fuse.h>` then `struct fuse_stat` will also be defined to include the `st_flags` field.
+- WinFsp-FUSE also adds the following OSXFUSE operations: `setcrtime`, `setchgtime`. These can be used to set the creation (birth) time and change (ctime) time of a file.
+- New `GetDirInfoByName` file system operation adds fast queries of directory info by file name rather than pattern [e.g. `FindFirstFileW(L"foobar", FindData)`]. Tests with fsbench showed that such queries are sped up by an order of magnitude when using `GetDirInfoByName` in MEMFS. Case-sensitive FUSE file systems get this optimization for free. The .NET layer also adds `GetDirInfoByName`.
+- New `FspFileSystemOperationProcessId` API adds support for getting the originating process ID (PID) during `Create`, `Open` and `Rename` calls. FUSE file systems can now access `fuse_context::pid`. The .NET layer also adds `GetOperationProcessId`.
+- New command line tool `fsptool` allows command line access to some WinFsp features.
+- The WinFsp launcher now passes the username of the user who launched the file system as parameter %3. This is useful to file systems that use the launcher infrastructure, such as SSHFS-Win.
+- Important GitHub issues fixed: #96, #97, #103, #107
+
+
+v1.2B2 (2017.2 B2)::
+
+Changes since v1.1:
+
+- New command line tool `fsptool` allows command line access to some WinFsp features.
+- New `GetDirInfoByName` file system operation adds fast queries of directory info by file name rather than pattern [e.g. `FindFirstFileW(L"foobar", FindData)`]. Tests with fsbench showed that such queries are sped up by an order of magnitude when using `GetDirInfoByName` in MEMFS. Case-sensitive FUSE file systems get this optimization for free. The .NET layer also adds `GetDirInfoByName`.
+- New `FspFileSystemOperationProcessId` API adds support for getting the originating process ID (PID) during `Create`, `Open` and `Rename` calls. FUSE file systems can now access `fuse_context::pid`. The .NET layer also adds `GetOperationProcessId`.
+- Important GitHub issues fixed: #96, #97, #103, #107
+
+
+v1.2B1 (2017.2 B1)::
+
+- New command line tool `fsptool` allows command line access to some WinFsp features.
+- New `GetDirInfoByName` file system operation adds fast queries of directory info by file name rather than pattern [e.g. `FindFirstFileW("foobar", FindData)`]. Tests with fsbench showed that such queries are sped up by an order of magnitude when using `GetDirInfoByName` in MEMFS.
+- New `FspFileSystemOperationProcessId` API adds support for getting the originating process ID (PID) during `Create`, `Open` and `Rename` calls.
+
+
+v1.1 (2017.1)::
+
+This release brings some major new components and improvements.
+
+- A .NET layer that allows the creation of file systems in managed mode. This is contained in the new `winfsp-msil.dll`. The new .NET layer is being tested with the WinFsp test suites and Microsoft's ifstest.
+- FUSE for Cygwin is now included with the installer.
+- FUSE now has a `-ovolname=VOLNAME` parameter that allows setting the volume label. Thanks @samkelly.
+- A number of other FUSE improvements have been made (see issue #85).
+
+NOTE: The C++ layer included in the v1.1 beta releases is not part of this release as it is still work in progress. It can be found in `inc/winfsp/winfsp.hpp` in the WinFsp source repository.
+
+
+v1.1B3 (2017.1 B3)::
+
+v1.1B2 (2017.1 B2)::
+
+v1.1B1 (2017.1 BETA)::
+
+This release brings some major new components and improvements.
+
+- A .NET layer that allows the creation of file systems in managed mode. This is contained in the new `winfsp-msil.dll`. The new .NET layer is being tested with the WinFsp test suites and Microsoft's ifstest.
+- A simple C++ layer can be found in `inc/winfsp/winfsp.hpp`.
+- FUSE for Cygwin is now included with the installer.
+- FUSE now has a `-ovolname=VOLNAME` parameter that allows setting the volume label. Thanks @samkelly.
+
+
+v1.0::
+
+This is the WinFsp 2017 release! :tada:
+
+- The API is now *FROZEN*. Breaking API changes will receive a major version update (`2.0`). Incremental API changes will receive a minor version update (`1.x`).
+- Adds chocolatey package. Try `choco install winfsp` (note: pending approval from chocolatey.org).
+- FUSE `-d` output now always goes to stderr. There is also a new `-oDebugLog=FILE` switch to specify a debug output file.
+- FUSE now provides a default `statfs` implementation if a file system does not provide one.
+- The WinFsp DLL now exports `fuse_*` symbols in addition to the `fsp_fuse_*` symbols. These symbols are for use with programs that use FFI technology such as jnr-fuse and fusepy *ONLY*. They are not supposed to be used by native C/C++ programs. Such programs are supposed to include the `<fuse.h>` headers.
+
+
+v1.0RC3::
+
+This is the WinFsp 2017 Release Candidate 3, which should be the last Release Candidate according to the current plan. This release fixes a major issue with some file systems and includes a few smaller changes:
+
+- Fixes GitHub issue #55. Prior to this fix it was possible for a rogue process (or faulty file system) to crash Windows using WinFsp. For full details read http://www.osronline.com/showthread.cfm?link=282037[this thread].
+- Introduces the `FspFileSystemSetMountPointEx` API, which allows the specification of a security descriptor when mounting over a directory.
+- Introduces the `FspVersion` API, which allows the retrieval of the WinFsp DLL version. Currently this reports `0x00010000` (version `1.0`).
+- Introduces the `FSP_FUSE_CAP_CASE_INSENSITIVE` and `FSP_FUSE_CAP_READDIR_PLUS` WinFsp-FUSE flags. The `FSP_FUSE_CAP_CASE_INSENSITIVE` flag allows a file system to mark itself as case-insensitive. The `FSP_FUSE_CAP_READDIR_PLUS` flag allows a file system to include full `stat` details when responding to the `readdir` operation (thus avoiding extraneous `getattr` calls).
+- When using WinFsp-FUSE over Cygwin, POSIX paths can be used as mountpoints.
+- Fixes GitHub issue #45. Prior to this fix, file systems that do not properly implement `Cleanup` (including FUSE file systems) would at times disallow renaming of directories.
+
+
+v1.0RC2::
+
+This is the WinFsp 2017 Release Candidate 2. Some important changes included below:
+
+- WinFsp is now available under the GPLv3 with a special exception for Free/Libre and Open Source Software.
+- The location of the WinFsp launcher registry entries is now `HKEY_LOCAL_MACHINE\Software\WinFsp\Services`. [On Win64 the actual location is `HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\WinFsp\Services`.] This change was necessary to avoid loss of third party file system registry entries during WinFsp uninstallation. [See GitHub issue #31.]
+- Despite stating in the previous release that the API has been finalized the `ReadDirectory` `FSP_FILE_SYSTEM_INTERFACE` operation has been changed. Extensive testing with multiple file systems has shown that `ReadDirectory` was hard to implement correctly. The new definition should make implementation easier for most file systems. [See GitHub issue #34.]
+- Some API's to facilitate `ReadDirectory` implementation have been added. Look for `FspFileSystem*DirectoryBuffer` symbols.
+- The installer now (optionally) installs a sample file system called "passthrough". This is a simple file system that passes all operations to an underlying file system. There is also a tutorial for this file system (in the doc directory).
+- The installer now (optionally) installs a sample file system called "passthrough-fuse". This file system performs the same function as the "passthrough" file system, but uses the FUSE compatibility layer. It builds and runs on both Windows and Cygwin.
+
+
+v1.0RC1::
+
+This is the WinFsp 2017 Release Candidate 1. It has been tested extensively in a variety of scenarios for stability and correct file system semantics. Some of the more important changes:
+
+- API has been polished and finalized.
+- Extensively tested against multiple test suites including Microsoft's IfsTest.
+- WinFsp I/O Queues (the fundamental WinFsp IPC mechanism) have been improved to work similar to I/O Completion Ports.
+- Opportunistic locks have been implemented.
+- File system statistics have been implemented.
+- Sharing a (disk) file system over the network is supported.
+- Case insensitive file systems are supported.
+- Directories are supported as mount points.
+- Access checks are performed correctly in the absense of the traverse privilege.
+- Access checks are performed correctly in the presence of the backup and restore privileges.
+
+
+v0.17::
+
+This release brings support for named streams.
+
+- Named streams (or alternate data streams) are additional streams of data within a file. When a file gets opened the main (default, unnamed) data stream of a file gets accessed. However NTFS (and now WinFsp) supports multiple data streams per file accessible using the `filename:streamname` syntax.
+- WinFsp handles a lot of the hairy details regarding named streams, including sharing checks, pending delete checks, conflicts between the main and named streams, etc.
+- User mode file systems that wish to support named streams must set the `FSP_FSCTL_VOLUME_PARAMS::NamedStreams` flag and must also be prepared to handle named streams on `Create`, `Cleanup`, etc. They must also implement the new `FSP_FILE_SYSTEM_INTERFACE::GetStreamInfo` operation. For more information on how to correctly handle named streams refer to the MEMFS sample.
+
+
+v0.16::
+
+This release brings support for reparse points and symbolic links as well as other minor changes.
+
+- Reparse points are a general mechanism for attaching special behavior to files. Symbolic links in Windows are implemented as reparse points. WinFsp supports any kind of reparse point including symbolic links.
+- The WinFsp FUSE implementation supports symbolic links. It also supports POSIX special files (FIFO, SOCK, CHR, BLK) as NFS reparse points (see https://msdn.microsoft.com/en-us/library/dn617178.aspx).
+- User mode file systems that wish to support reparse points will have to set the `FSP_FSCTL_VOLUME_PARAMS::ReparsePoints` flag and implement the `FSP_FILE_SYSTEM_INTERFACE` methods `ResolveReparsePoints`, `GetReparsePoint`, `SetReparsePoint`, `DeleteReparsePoint`. More information in this blog article: http://www.secfs.net/winfsp/blog/files/reparse-points-symlinks-api-changes.html
+- The installation now includes public symbol files for all WinFsp components shipped.
+
+
+v0.15::
+
+This is a minor release that brings support for Windows 7 and 32-bit OS'es.
+
+- Fixes a number of issues for Windows 7. Windows 7 is now officially supported.
+- Fixes a number of issues with the 32-bit FSD and user mode components. 32-bit versions of Windows are now officially supported.
+
+
+v0.14::
+
+This release includes support for file systems protected by credentials.
+
+- WinFsp now supports file systems that require username/password to be unlocked (e.g. sshfs/secfs). Such file systems must add a DWORD registry value with name "Credentials" and value 1 under their WinFsp.Launcher service entry. The WinFsp network provider will then prompt for credentials using the `CredUIPromptForWindowsCredentials` API. Credentials can optionally be saved with the Windows Credential Manager.
+- WinFsp-FUSE now uses the S-1-0-65534 <--> 65534 mapping for unmapped SID/UID's. The Anonymous SID mapping from the previous release had security issues.
+
+
+v0.13::
+
+This release includes a Cygwin package, an API change and some other minor changes:
+
+- New Cygwin package includes `cygfuse-2.8.dll` and `libfuse-2.8.dll.a` for easy use in the Cygwin environment. This is currently offered as a separate download.
+- Minor but breaking API change: `SetFileSize`/`SetAllocationSize` have been consolidated. Please refer to the documentation for a description of the changes.
+- File system drive symbolic links (`DefineDosDeviceW`) now automatically cleaned up even if user mode file system crashes or is terminated forcefully.
+- WinFsp-FUSE now maps unmapped UID's to the Anonymous SID (S-1-5-7). See: https://cygwin.com/ml/cygwin/2016-06/msg00359.html
+
+
+v0.12::
+
+Prior changes are not recorded in this Changelog.

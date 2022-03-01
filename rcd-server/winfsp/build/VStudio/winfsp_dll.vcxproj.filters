@@ -1,0 +1,197 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Include">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Include\winfsp">
+      <UniqueIdentifier>{1d6501f4-cebd-4a00-a774-deb782b59fb5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\fuse">
+      <UniqueIdentifier>{0e7ab1b1-bfca-4439-accb-45a909be9cad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\fuse">
+      <UniqueIdentifier>{518cce17-85cd-489c-b4be-920a84c1d73c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\fuse3">
+      <UniqueIdentifier>{12afd2f1-f5ec-4008-b6ef-89cc626019ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\fuse3">
+      <UniqueIdentifier>{96091a7b-3923-4a74-9491-3ee230c688f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\shared">
+      <UniqueIdentifier>{a099cca5-e40c-4f99-baff-b5399dac5406}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\shared\um">
+      <UniqueIdentifier>{c2e11b62-74a0-41af-9f5b-0846fe81563c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\shared\ku">
+      <UniqueIdentifier>{7963f853-656a-4fd7-b8df-e586c3fe3dab}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\inc\winfsp\fsctl.h">
+      <Filter>Include\winfsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\winfsp\winfsp.h">
+      <Filter>Include\winfsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dll\library.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\fuse\fuse.h">
+      <Filter>Include\fuse</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\fuse\fuse_common.h">
+      <Filter>Include\fuse</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\fuse\fuse_opt.h">
+      <Filter>Include\fuse</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\fuse\winfsp_fuse.h">
+      <Filter>Include\fuse</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dll\fuse\library.h">
+      <Filter>Source\fuse</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\winfsp\winfsp.hpp">
+      <Filter>Include\winfsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\winfsp\launch.h">
+      <Filter>Include\winfsp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\fuse3\fuse.h">
+      <Filter>Include\fuse3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\fuse3\fuse_common.h">
+      <Filter>Include\fuse3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\fuse3\fuse_opt.h">
+      <Filter>Include\fuse3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\fuse3\winfsp_fuse.h">
+      <Filter>Include\fuse3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\dll\fuse3\library.h">
+      <Filter>Source\fuse3</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\shared\um\minimal.h">
+      <Filter>Source\shared\um</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\shared\ku\library.h">
+      <Filter>Source\shared\ku</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\shared\ku\config.h">
+      <Filter>Source\shared\ku</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\dll\library.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\debug.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\ntstatus.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\fsctl.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\path.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\fsop.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\fs.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\security.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\np.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\service.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\eventlog.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\util.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\fuse\fuse.c">
+      <Filter>Source\fuse</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\fuse\fuse_opt.c">
+      <Filter>Source\fuse</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\fuse\fuse_main.c">
+      <Filter>Source\fuse</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\fuse\fuse_intf.c">
+      <Filter>Source\fuse</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\dirbuf.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\fuse\fuse_compat.c">
+      <Filter>Source\fuse</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\wksid.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\launch.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\fuse3\fuse3.c">
+      <Filter>Source\fuse3</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\fuse3\fuse2to3.c">
+      <Filter>Source\fuse3</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\fuse\fuse_loop.c">
+      <Filter>Source\fuse</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\fuse3\fuse3_compat.c">
+      <Filter>Source\fuse3</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\mount.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\shared\ku\posix.c">
+      <Filter>Source\shared\ku</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\dll\ldap.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\dll\library.def">
+      <Filter>Source</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\src\dll\version.rc">
+      <Filter>Source</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="..\..\src\dll\eventlog\eventlog.rc">
+      <Filter>Source</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\src\dll\fuse\fuse.pc.in">
+      <Filter>Source\fuse</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\dll\fuse3\fuse3.pc.in">
+      <Filter>Source\fuse3</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

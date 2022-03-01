@@ -1,9 +1,11 @@
 package tray
 
 import (
-	"app/src/gui"
+	"app/src/gui_ng"
+	"app/src/gui_nk"
 	"app/src/rclone"
 	"app/src/states"
+	"fmt"
 	"log"
 	"math/rand"
 	"time"
@@ -18,7 +20,7 @@ import (
 const (
 	TrayIconMsg = WM_APP + 1
 
-	activeGUI = "nanogui" // specify GUI framework name. Only 'nanogui' is available for now.
+	activeGUI = "nanogui" // nuklear || nanogui
 )
 
 var (
@@ -35,19 +37,33 @@ func wndProc(hWnd uintptr, msg uint32, wParam, lParam uintptr) uintptr {
 	case TrayIconMsg:
 		switch nmsg := LOWORD(uint32(lParam)); nmsg {
 		case NIN_BALLOONUSERCLICK:
-			log.Println("user clicked the balloon notification")
+			fmt.Println("user clicked the balloon notification")
 		case WM_LBUTTONDOWN:
-			log.Println("user clicked the tray icon")
+			fmt.Println("user clicked the tray icon")
 
 			switch activeGUI {
 			case "nanogui":
-				gui.MousePosX, gui.MousePosY = robotgo.GetMousePos()
-				if gui.ShowMainWindow {
-					gui.ShowMainWindow = false
+				gui_ng.MousePosX, gui_ng.MousePosY = robotgo.GetMousePos()
+				fmt.Println(gui_ng.MousePosX)
+				fmt.Println(gui_ng.MousePosY)
+				if gui_ng.ShowMainWindow {
+					gui_ng.ShowMainWindow = false
 					//Ti.SetIcon(iconDefault)
 				} else {
-					gui.ShowMainWindow = true
+					gui_ng.ShowMainWindow = true
 					//Ti.SetIcon(iconError)
+				}
+			case "nuklear":
+				gui_nk.MousePosX, gui_nk.MousePosY = robotgo.GetMousePos()
+				fmt.Println(gui_nk.MousePosX)
+				fmt.Println(gui_nk.MousePosY)
+				if gui_nk.ShowMainWindow {
+					gui_nk.ShowMainWindow = false
+					//Ti.SetIcon(iconError)
+				} else {
+					gui_nk.ShowMainWindow = true
+					//Ti.SetIcon(iconDefault)
+
 				}
 			}
 		}
@@ -234,7 +250,9 @@ func Main() {
 	// Switch to active GUI
 	switch activeGUI {
 	case "nanogui":
-		gui.Main()
+		gui_ng.Main()
+	case "nuklear":
+		gui_nk.Main()
 	}
 
 	var msg MSG

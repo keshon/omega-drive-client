@@ -21,10 +21,9 @@
 *.exe
 _release/
 release/
-key.ini
+key
 logs
 logs-server
 logs.txt
 logs-server.txt
-*example*
-rcd-server/
+*conf_*

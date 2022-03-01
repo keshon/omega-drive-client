@@ -19,7 +19,7 @@ var (
 
 func main() {
 
-	// Create log
+	// Log
 	err := os.Remove("logs.txt")
 	if err != nil {
 		log.Println(err)
