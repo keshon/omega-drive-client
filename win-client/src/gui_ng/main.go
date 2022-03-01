@@ -205,11 +205,9 @@ func gfxMain(screen *nanogui.Screen) {
 	MainNGWindow.SetFixedHeight(splitterHeight)
 	MainNGWindow.SetLayout(nanogui.NewGroupLayout(0, 5, 0))
 	MainNGWindow.SetVisible(true)
+	MainNGWindow.SetDraggable(false)
 
 	menuWidget := nanogui.NewWidget(MainNGWindow)
-	//menu.SetFixedWidth(winWidth)
-	//menu.SetWidth(winWidth)
-	//menu.SetLayout(nanogui.NewBoxLayout(nanogui.Horizontal, nanogui.Maximum, 5, 10))
 	menuWidget.SetLayout(nanogui.NewGridLayout(nanogui.Horizontal, 6, nanogui.Fill, 10, 5))
 
 	actionButton := nanogui.NewPopupButton(menuWidget, "Diconnected")
@@ -218,8 +216,6 @@ func gfxMain(screen *nanogui.Screen) {
 	popup.SetLayout(nanogui.NewGroupLayout())
 
 	// Action buttons
-	//nanogui.NewLabel(popup, "Select action below:")
-	//nanogui.NewCheckBox(popup, "A check box")
 	connectButton := nanogui.NewButton(popup, "Connect")
 	refreshButton := nanogui.NewButton(popup, "Refresh")
 	reconnectButton := nanogui.NewButton(popup, "Reconnect")
