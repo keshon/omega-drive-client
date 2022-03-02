@@ -1,4 +1,0 @@
-From: https://github.com/billziss-gh/winfsp/blob/master/License.txt
-
-LICENSE
-
