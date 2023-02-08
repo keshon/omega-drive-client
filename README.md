@@ -1,24 +1,18 @@
-# Samuno - mounting S3 drives in Windows with user access
-## About
-**Samuno** - is a simple software that allows you to mount S3 buckets (or directories) in Windows as network shares via access key that is bound to a specific person.
+# Omega Drive client
+## What is Omega Drive
+Omega Drive is my pet project that I started while working as a CTO in a small animation studio.
+It is used to provide colleagues with distributed access to various paths of the S3 object storage and map them as local drives. 
+It supports read-only access or full access depending on the server settings.
+Omega Drive client acts as GUI wrapper on top of [Rclone](https://github.com/rclone/rclone) - cli application to managing and mounting various type of network storages.
 
-The aim is to manage and control access to network drives for employees in a company. 
+## What components does OD consist of
+Omega Drive has three main components:
+1. A client using [Fyne](https://github.com/fyne-io/fyne) as GUI
+2. [RCD binary](https://github.com/keshon/omega-drive-client-rcd) - a compiled version of [Rclone](https://github.com/rclone/rclone) with a small wrapper on top.
+3. [Server environment](https://github.com/keshon/omega-drive-server) - mix of N8n.io workflow and Airtable.
 
-The software relies on Rclone as backend (+ WinFsp library) and N8N + Airtable services for authenications.
-
-<kbd>![# Demo](https://raw.githubusercontent.com/keshon/assets/main/samuno/demo.gif)</kbd>
-
-## How is it working
-0. Create two pair of access & secret keys for S3 provider: one for full access, another for read only.
-1. Add new user inside Airtable and create a unique key for him.
-2. Create new path inside Airtable using `butcket-name/subpath` pattern.
-3. Assing paths to the user.
-4. Provide user with the key and link to compiled binary of Samuno.
-5. User downloads the software (and WinFcp library), run it and under the Settings fill-in the given key.
-6. User press Connect button - the key is being validated and assigned buckets are being mounted.
-
-## Folder content
-- **3rd-party-tools** - binary tools are needed to generate icon and syso files.
-- **rcd-server** - sources for server part of the application.
-- **user-access** - example for [Airtable](http://airtable.com "Airtable") tables structure and json workflow for [N8N](https://n8n.io/ "N8N").
-- **win-client** - sources for front-end part of the application. GUI is based on modified version of [NanoGUI](https://github.com/shibukawa/nanogui-go "NanoGUI") framework.
+## How to assemble the client
+To build the client part, you need to perform several steps:
+1. Rename `/conf/conf.go.BLANK` to `/conf/conf.go`
+2. Populate the `conf.go` file with the appropriate information (mostly N8n endpoint paths).
+3. Compile the RCD client binary and place it in the root of the client folder.

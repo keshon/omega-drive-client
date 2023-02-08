@@ -1,3 +1,0 @@
-[submodule "rcd-server/winfsp"]
-	path = rcd-server/winfsp
-	url = https://github.com/winfsp/winfsp.git
